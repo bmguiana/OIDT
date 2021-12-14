@@ -64,7 +64,7 @@ cpml_sigma_optimal = 0.8*(m_grade+1)/(eta*delta_x)  # Optimal sigma value
 
 cpml_sigma_max = 1.2*cpml_sigma_optimal             # Maximum sigma value
 cpml_alpha_max = 0.05                               # Maximum alpha value
-if cpml_toggle:
+if True:
     cpml_kappa_max = 5                              # Maximum kappa value if CPML is on
 else:
     cpml_kappa_max = 1                              # Maximum kappa value if CPML is off
