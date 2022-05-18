@@ -1,7 +1,8 @@
 # Optical Interconnect Designer Tool (OIDT)
 
 ### Author: Brian Guiana
-### Date: 10 December 2021
+### Created: 10 December 2021
+### Updated: 17 May 2022
 
 ## Acknowledgement
 This project was completed as part of research conducted with my major professor and advisor, Prof. Ata Zadehgol, as part of the Applied and Computational Electromagnetics Signal and Power Integrity (ACEM-SPI) Lab while working toward the Ph.D. in Electrical Engineering at the University of Idaho, Moscow, Idaho, USA. This project was funded, in part, by the National Science Foundation (NSF); award #1816542 [1].
