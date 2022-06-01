@@ -115,4 +115,9 @@ This project is licensed under GNU GPL v.3.0. See the license file for details.
 
 [13] D. M. Sullivan, Electromagnetic Simulation Using the FDTD
         Method, 2nd~ed. Piscataway, NJ, USA: Wiley-IEEE Press, 2013.
+
+[14] B. Guiana and A. Zadehgol, "Analytical Models of Stochastic Scattering 
+        Loss for TM and TE Modes in Dielectric Waveguides Exhibiting Exponential Surface 
+        Roughness, and a Validation Methodology in 3D FDTD," 2022;
+        TechRxiv Preprint Available: https://doi.org/10.36227/techrxiv.19799737.v1 
 ```
