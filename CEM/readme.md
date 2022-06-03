@@ -120,4 +120,9 @@ This project is licensed under GNU GPL v.3.0. See the license file for details.
         Loss for TM and TE Modes in Dielectric Waveguides Exhibiting Exponential Surface 
         Roughness, and a Validation Methodology in 3D FDTD," 2022;
         TechRxiv Preprint Available: https://doi.org/10.36227/techrxiv.19799737.v1 
+
+[15] P. Sypek, A. Dziekonski, and M. Mrozowski, "How to Render FDTD Computations More 
+	Effective Using a Graphics Accelerator," IEEE Transactions on Magnetics, 
+	Vol. 45, No. 3, Mar. 2009, pp. 1324--1327, DOI: 10.1109/TMAG.2009.2012614
+
 ```
