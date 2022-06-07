@@ -93,14 +93,14 @@ fmax = int(300e12*cfg.nt*cfg.delta_t)+2
 freq = rf.Frequency.from_f(ff[fmin:fmax], unit='Hz')
 
 net = rf.Network(frequency=freq, s=S_mat[fmin:fmax, :, :], z0=50, name='Interconnects')
-net.write_touchstone('example', usr.output_dir, write_z0=True, skrf_comment=True, form='ri')
+net.write_touchstone(usr.sparam_file, usr.output_dir, write_z0=True, skrf_comment=True, form='ri')
 
-file = open('./{}/example.s{}p'.format(usr.output_dir, num_ports), mode='r')
+file = open('./{}/{}.s{}p'.format(usr.output_dir, usr.sparam_file, num_ports), mode='r')
 file_lines = file.readlines()
 file_ack = '!This S-parameter file was generated as part of the OIDT. This project was completed as part of research conducted with my major professor and advisor, Prof. Ata Zadehgol, at the Applied and Computational Electromagnetics Signal and Power Integrity (ACEM-SPI) Lab while working toward the Ph.D. in Electrical Engineering at the University of Idaho, Moscow, Idaho, USA. This project was funded, in part, by the National Science Foundation (NSF); award #1816542 [1].\n'
 file_lines.insert(0, file_ack)
 
-file = open('./{}/example.s{}p'.format(usr.output_dir, num_ports), mode='w')
+file = open('./{}/{}.s{}p'.format(usr.output_dir, usr.sparam_file, num_ports), mode='w')
 file.writelines(file_lines)
 file.close()
 

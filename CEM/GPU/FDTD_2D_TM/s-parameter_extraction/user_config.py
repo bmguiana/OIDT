@@ -78,6 +78,8 @@ output_dir = 'Results'         # Output directory name (, str)
                                #     name does not already exist. Do not
                                #     include the './' prefix.
 
+sparam_file = 'example'        # Output file name for S-Parameter extraction (, str)
+
 # Source parameters
 source_type = 2                # Input source type (, int)
                                #     1: Gaussian pulse
