@@ -1,18 +1,19 @@
 # OIDT FDTD 2D TE
 ### Author: Brian Guiana
-### Date: 1 July 2022
+### Date: 2 August 2022
+
 ## Acknowledgement
-This project was completed as part of research conducted with my major professor and advisor, Prof. Ata Zadehgol, in the Applied and Computational Electromagnetics Signal and Power Integrity (ACEM-SPI) Lab while working toward the Ph.D. in Electrical Engineering at the University of Idaho, Moscow, Idaho, USA. This project was funded, in part, by the National Science Foundation (NSF); award #1816542 [1].
+This project was completed as part of research conducted with my major professor and advisor, Prof. Ata Zadehgol, at the Applied and Computational Electromagnetics Signal and Power Integrity (ACEM-SPI) Lab while working toward the Ph.D. in Electrical Engineering at the University of Idaho, Moscow, Idaho, USA. This project was funded, in part, by the National Science Foundation (NSF); award #1816542 [1].
 
 ## Description
-The code contained within this folder is set up to automatically extract S-paramters from multiple tightly coupled waveguides. The code here has a modified structure to improve end-user ease of use compared to the other examples provided. In this release, users can input simulation parameters into `user_config.py` and run simulations using the new launcher `simulation_launcher.py`. The launcher has been tested using Spyder IDE and terminal-based Python console. Details about each included file are below.
+The code contained within this folder is set up to automatically extract S-paramters from multiple tightly coupled waveguides. The code here has a modified structure to improve end-user ease of use compared to the other examples provided. In this release, users can input simulation parameters into `user_config.py` and run simulations using the new launcher `simulation_launcher.py`. The launcher has been tested using Spyder IDE, Wing Pro IDE, and a terminal-based Python console. Details about each included file are below.
 
 ## Run Instructions
-1. Open `user_config.py`. Set the desired simulation parameters as needed.
+1. Open `user_config.py`. Set the desired simulation parameters as needed. This includes the minimum/maximum frequency and number of frequency samples to use in the resulting touchstone file.
 2. Save `user_config.py`. The file may be closed after saving.
 3. Run `simulation_launcher.py`. Changes to this file are neither necessary nor advised.
 
-*Note*: The default settings have been tested on the Nvidia Quadro K6000 Graphical Processing Unit (GPU), and each simulation can be run in under 1 minute. At these settings, less than 500 MB of VRAM is required. A total of 4 simulations are required _*per line*_ and results are available only after all simulations have finished. The total completion time for the default settings (2 lines) was under 10 minutes. A minimum of 500 MB of disk space is required, but 2 GB is recommended.
+*Note*: A total of 4 simulations are required _*per line*_ (2 incident and 2 reflected) and results become available after all simulations have finished. Preprocessing is done on parallelized CPU (where available), and the main FDTD loop was tested on the Nvidia Quadro K6000 Graphical Processing Unit (GPU) with 2 coupled lines over 10,001 frequency samples between 170 THz and 230 THz. Individual simulations completed in under 1 minute (Approx. 8 minutes total). These settings used approx. 1.8 GB of host (CPU) RAM and 1.9 GB of device (K6000) RAM, and required 1 GB of disk storage space to perform basic operations. The `*.npy` and `*.pkl` files may be safely deleted once the touchstone file is saved to the disk.
 
 ## Files
 This example requires the 7 included python scripts.
@@ -25,6 +26,7 @@ This example requires the 7 included python scripts.
 - `user_config.py`: This file contains common configuration parameters for simulation of dielectric slab waveguides exhibiting sidewall roughness. While parameters in this file can be (mostly) freely modified, it is not recommended to edit any of the parameters in other files.
 - `Results\example.s4p`: Example 4-port (2 line) S-parameter file extracted using this code. This uses roughness and does not correlate to the included pdf.
 - `smooth_4-port_example.pdf`: Example 4-port (2 line) S-parameters across the output frequency range. These are shown in dB and are the result of smooth waveguide simulation. To reproduce this plot, simply change `rough_toggle` in `user_config.py` to `False`.
+
 - Additional files are part of the SROPEE [16].
 
 ## Input Parameters
@@ -34,17 +36,18 @@ This example requires the 7 included python scripts.
 - `fdtd_funcs.py`: None.
 - `fdtd_main.py`: None.
 - `simulation_launcher.py`: None.
-- `user_config.py`: Geometrical properties, material properties, source conditions, some boundary conditions. Descriptions for each individual parameter are outlined within the file.
+- `user_config.py`: Geometrical properties, material properties, S-parameter extraction range and resolution, source conditions, some boundary conditions. Descriptions for each individual parameter are outlined within the file.
 
 ## Outputs
 - `aux_funcs.py`: None.
-- `extract_sparams.py`: S-parameters in touchstone format (`.sNp`). These are saved as real/imaginary over the frequency range of 100 THz to 300 THz.
+- `extract_sparams.py`: S-parameters in touchstone format (`.sNp`). These are saved as real/imaginary over the user specified frequency range.
 - `fdtd_auto_setup.py`: None.
 - `fdtd_funcs.py`: None.
-- `fdtd_main.py`: Time-domain data in the form of `.npy` files. Each file is approximately 25 MB at default settings with 24 of those being generated for a 2 line S-parameter extraction simulation. During rough simulations the folder `rough_profiles` will be created if it does not already exist. During all simulation the folder named by `output_dir` in `user_config.py` will be created.
+- `fdtd_main.py`: Simultaneous Fast Fourier Transform (SFFT) [13] data in the form of `.npy` files. 24 files are generated for 2 line S-parameter extraction. During rough simulations the folder `rough_profiles` will be created if it does not already exist. During all simulation the folder named by `output_dir` in `user_config.py` will be created.
 - `simulation_launcher.py`: Everything from `extract_sparams.py` and `fdtd_main.py`.
 - `user_config.py`: None.
 
 ## Python Info
 The below packages are required (in addition to those listed in the `CEM` directory):
 - `scikit-rf`: 0.18.1
+

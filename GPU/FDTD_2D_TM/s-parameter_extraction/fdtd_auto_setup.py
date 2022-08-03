@@ -25,21 +25,38 @@ import pickle
 
 args = sys.argv
 try:
-    uf = open('user_dict_{}.pkl'.format(args[1]), 'rb')
+    usr_name = 'user_dict_{}.pkl'.format(args[1])
+    uf = open(usr_name, 'rb')
 except:
     print('loading default configuration')
     import user_config as user_module
     user_dict = aux.dict_from_module(user_module)
-    dict_file = open('user_dict.pkl', 'wb')
+    usr_name = 'user_dict.pkl'
+    dict_file = open(usr_name, 'wb')
     pickle.dump(user_dict, dict_file)
     dict_file.close()
-    uf = open('user_dict.pkl', 'rb')
+    uf = open(usr_name, 'rb')
 
 usr = pickle.load(uf)
+
+if usr['auto_condition']:
+    usr['f0'] = 0.5 * (usr['sparam_fmin'] + usr['sparam_fmax'])
+    usr['harmonics'] = 2.0
+    usr['points_per_wl'] = 20
+    usr['num_flights'] = 2.0
+
+    #user_dict = aux.dict_from_module(user_module)
+    dict_file = open(usr_name, 'wb')
+    pickle.dump(usr, dict_file)
+    dict_file.close()
+    uf = open(usr_name, 'rb')
+    usr = pickle.load(uf)
 
 # =============================================================================
 # Automated simulation setup
 # =============================================================================
+
+sparam_freqs = np.linspace(usr['sparam_fmin'], usr['sparam_fmax'], num=usr['sparam_num_freqs'])
 
 # Physical constants and value normalization
 eps = usr['eps_rel_bg'] / ( 36.0e9 * np.pi )                      # Base permittivity (F/m)
@@ -151,13 +168,3 @@ profile_acl = str(round(usr['rough_acl']*1e9))
 roughness_profile = '_s{}nm_lc{}nm_r{}'.format(profile_std, profile_acl, usr['profile_number'])
 up = './{}/profile_upper{}'.format(usr['prof_dir'], roughness_profile)
 lp = './{}/profile_lower{}'.format(usr['prof_dir'], roughness_profile)
-
-cosE = np.zeros(nt, dtype=usr['precision'])
-cosH = np.zeros(nt, dtype=usr['precision'])
-sinE = np.zeros(nt, dtype=usr['precision'])
-sinH = np.zeros(nt, dtype=usr['precision'])
-for n in range(nt):
-    cosE[n] = np.cos( 2 * np.pi * usr['f0'] * (n+0.0) * delta_t, dtype=usr['precision'])
-    sinE[n] = np.sin( 2 * np.pi * usr['f0'] * (n+0.0) * delta_t, dtype=usr['precision'])
-    cosH[n] = np.cos( 2 * np.pi * usr['f0'] * (n+0.5) * delta_t, dtype=usr['precision'])
-    sinH[n] = np.sin( 2 * np.pi * usr['f0'] * (n+0.5) * delta_t, dtype=usr['precision'])

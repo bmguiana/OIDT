@@ -1,8 +1,9 @@
 """
 Author: B. Guiana
 
-Description:
-
+Description: User specified simulation parameters. A short description of each
+             varaible follows as an in-line comment. Units and data types are
+             provided in parentheses as (unit, dtype) where applicable.
 
 Acknowledgement: This project was completed as part of research conducted with
                  my major professor and advisor, Prof. Ata Zadehgol, at the
@@ -29,7 +30,7 @@ eps_rel_bg = 1.5**2            # Background/cladding relative permittivity (, fl
 eps_rel_fg = 3.5**2            # Foreground/core relative permittivity (, float)
 
 # Geometry
-sgl_wg_length = 20.0e-6        # Waveguide length (m, float)
+sgl_wg_length = 15.0e-6        # Waveguide length (m, float)
 sgl_wg_height = 0.2e-6         # Single waveguide height (m, float)
 
 pitch = 2.0e-6                 # Pitch between waveguides (m, float)
@@ -63,6 +64,10 @@ ctype = 3                      # Roughness profile correlation type for upper an
 
 precision = np.float32         # Floating point arithmetic precision. Choose np.float32 or np.float64
 sim_type = 's-param'           # Simulation type. Choose 's-param'. Other outputs not ready yet.
+auto_condition = True          # Automatically condition settings for "Source
+                               #     parameters" and "Resolution and duration"
+                               #     for the provided "S-Parameter Extraction"
+                               #     settings (, bool)
 
 feedback_at_n_percent = 10     # Interval between feedback readouts (%, int or float)
 profile_number = 0             # Roughness profile index number (, int)
@@ -81,8 +86,13 @@ prof_dir = 'rough_profiles'    # Storage directory for rough profiles (, str)
                                #     A new folder will be generated in the
                                #     working directory.
 
-sparam_file = 'example'        # Output file name for S-Parameter extraction (, str)
+sparam_file = 'te_fine_rough'  # Output file name for S-Parameter extraction (, str)
 spice_file = 'full_network'    # Output file name for equivalent circuit [spice format] (, str)
+
+# S-Parameter Extraction
+sparam_fmin = 170e12           # Minimum frequency for S-Parameter output file (Hz, float)
+sparam_fmax = 230e12           # Maximum frequency for S-Parameter output file (Hz, float)
+sparam_num_freqs = 10001       # Number of frequencies between fmin and fmax, inclusive (, int)
 
 # Source parameters
 source_type = 2                # Input source type (, int)
@@ -101,5 +111,6 @@ points_per_wl = 40             # Number of points per minimum wavelength (cells,
 
 # Boundary conditions
 num_cpml = 20                  # CPML layer size around simulation space (cells, int)
-buffer_xhat = 20               # Buffer length between source and cpml region size, z-direction (cells, int)
+buffer_xhat = 20               # Buffer length between source and cpml region size, x-direction (cells, int)
 ny_clad_wl = 2.0               # Buffer between waveguide core and cpml regions, y-direction (lambda, float)
+

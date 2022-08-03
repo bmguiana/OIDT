@@ -124,26 +124,24 @@ def update_pml_hz_yinc(Psi_Hz_ylo, Psi_Hz_yhi, Ex, Hz, bh, ch, db, dy, pmle, ib,
             Hz[i, je-pmle+j] = Hz[i, je-pmle+j] + db * Psi_Hz_yhi[i, j]
 
 
-#                          Rx     , Ry     , Ix     , Iy     , Ex     , Ey     , cs, sn, ib, jb, ie, je
-@cuda.jit(func_or_sig=void(fa[:,:], fa[:,:], fa[:,:], fa[:,:], fa[:,:], fa[:,:], fa, fa, i4, i4, i4, i4))
-def simul_fft_efield(Rx, Ry, Ix, Iy, Ex, Ey, cos, sin, ib, jb, ie, je):
-    i, j = cuda.grid(2)
-    if ib <= i < ie:
+#                          Ry     , Iy     , Ey     , cos    , sin    , n , nf, ic, jb, je
+@cuda.jit(func_or_sig=void(fa[:,:], fa[:,:], fa[:,:], fa[:,:], fa[:,:], i4, i4, i4, i4, i4))
+def simul_fft_efield(Ry, Iy, Ey, cos, sin, n, nf, ic, jb, je):
+    f, j = cuda.grid(2)
+    if f < nf:
         if jb <= j < je:
-            Rx[i, j] = Rx[i, j] + 0.5 * (Ex[i, j] + Ex[i+1, j]) * cos
-            Ix[i, j] = Ix[i, j] - 0.5 * (Ex[i, j] + Ex[i+1, j]) * sin
-            Ry[i, j] = Ry[i, j] + 0.5 * (Ey[i, j] + Ey[i, j+1]) * cos
-            Iy[i, j] = Iy[i, j] - 0.5 * (Ey[i, j] + Ey[i, j+1]) * sin
+            Ry[f, j] = Ry[f, j] + 0.5 * (Ey[ic, j] + Ey[ic, j+1]) * cos[f, n]
+            Iy[f, j] = Iy[f, j] - 0.5 * (Ey[ic, j] + Ey[ic, j+1]) * sin[f, n]
 
 
-#                          Rz     , Iz     , Hz     , cs, sn, ib, jb, ie, je
-@cuda.jit(func_or_sig=void(fa[:,:], fa[:,:], fa[:,:], fa, fa, i4, i4, i4, i4))
-def simul_fft_hfield(Rz, Iz, Hz, cos, sin, ib, jb, ie, je):
-    i, j = cuda.grid(2)
-    if ib <= i < ie:
+#                          Rz     , Iz     , Hz     , cos    , sin    , n , nf, ic, jb, je
+@cuda.jit(func_or_sig=void(fa[:,:], fa[:,:], fa[:,:], fa[:,:], fa[:,:], i4, i4, i4, i4, i4))
+def simul_fft_hfield(Rz, Iz, Hz, cos, sin, n, nf, ic, jb, je):
+    f, j = cuda.grid(2)
+    if f < nf:
         if jb <= j < je:
-            Rz[i, j] = Rz[i, j] + 0.25 * (Hz[i, j] + Hz[i+1, j] + Hz[i, j+1] + Hz[i+1, j+1]) * cos
-            Iz[i, j] = Iz[i, j] - 0.25 * (Hz[i, j] + Hz[i+1, j] + Hz[i, j+1] + Hz[i+1, j+1]) * sin
+            Rz[f, j] = Rz[f, j] + 0.25 * (Hz[ic, j] + Hz[ic+1, j] + Hz[ic, j+1] + Hz[ic+1, j+1]) * cos[f, n]
+            Iz[f, j] = Iz[f, j] - 0.25 * (Hz[ic, j] + Hz[ic+1, j] + Hz[ic, j+1] + Hz[ic+1, j+1]) * sin[f, n]
 
 
 @njit(parallel=True)
@@ -235,3 +233,13 @@ def map_hfield_yline(Hzz, Hz, zwstep, icut, je):
     j = cuda.grid(1)
     if j < je:
         Hzz[zwstep, j] = 0.25 * (Hz[icut, j] + Hz[icut+1, j] + Hz[icut, j+1] + Hz[icut+1, j+1])
+
+
+@njit(parallel=True)
+def map_sfft_coeffs(cosE, sinE, cosH, sinH, freqs, dt, nt):
+    for f in prange(len(freqs)):
+        for n in prange(nt):
+            cosE[f, n] = np.cos( 2 * np.pi * freqs[f] * (n+0.0) * dt)
+            sinE[f, n] = np.sin( 2 * np.pi * freqs[f] * (n+0.0) * dt)
+            cosH[f, n] = np.cos( 2 * np.pi * freqs[f] * (n+0.5) * dt)
+            sinH[f, n] = np.sin( 2 * np.pi * freqs[f] * (n+0.5) * dt)

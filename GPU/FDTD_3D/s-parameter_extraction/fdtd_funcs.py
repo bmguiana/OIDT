@@ -266,32 +266,30 @@ def update_pml_hz_yinc(Psi_Hz_ylo, Psi_Hz_yhi, Ex, Hz, bh, ch, db, dy, pmle, ib,
                 Hz[i, je-pmle+j, k] = Hz[i, je-pmle+j, k] + db * Psi_Hz_yhi[i, j, k]
 
 
-#                          Rx     , Ry     , Rz     , Ix     , Iy     , Iz     , Ex       , Ey       , Ez       , cs, sn, ib, jb, ie, je, ct
-@cuda.jit(func_or_sig=void(fa[:,:], fa[:,:], fa[:,:], fa[:,:], fa[:,:], fa[:,:], fa[:,:,:], fa[:,:,:], fa[:,:,:], fa, fa, i4, i4, i4, i4, i4))
-def simul_fft_efield(Rx, Ry, Rz, Ix, Iy, Iz, Ex, Ey, Ez, cos, sin, ib, jb, ie, je, cut):
-    i, j = cuda.grid(2)
-    if ib <= i < ie:
-        if jb <= j < je:
-            Rx[i, j] = Rx[i, j] + 0.5 * (Ex[i, j, cut] + Ex[i+1, j, cut]) * cos
-            Ix[i, j] = Ix[i, j] + 0.5 * (Ex[i, j, cut] + Ex[i+1, j, cut]) * sin
-            Ry[i, j] = Ry[i, j] + 0.5 * (Ey[i, j, cut] + Ey[i, j+1, cut]) * cos
-            Iy[i, j] = Iy[i, j] + 0.5 * (Ey[i, j, cut] + Ey[i, j+1, cut]) * sin
-            Rz[i, j] = Rz[i, j] + 0.5 * (Ez[i, j, cut] + Ez[i, j, cut+1]) * cos
-            Iz[i, j] = Iz[i, j] + 0.5 * (Ez[i, j, cut] + Ez[i, j, cut+1]) * sin
+#                          Rx       , Ry       , Ix       , Iy       , Ex       , Ey       , cos    , sin    , n , nf, ib, jb, ie, je, kc
+@cuda.jit(func_or_sig=void(fa[:,:,:], fa[:,:,:], fa[:,:,:], fa[:,:,:], fa[:,:,:], fa[:,:,:], fa[:,:], fa[:,:], i4, i4, i4, i4, i4, i4, i4))
+def simul_fft_efield(Rx, Ry, Ix, Iy, Ex, Ey, cos, sin, n, nf, ib, jb, ie, je, kc):
+    f, i, j = cuda.grid(3)
+    if f < nf:
+        if ib <= i < ie:
+            if jb <= j < je:
+                Rx[f, i, j] = Rx[f, i, j] + 0.5 * (Ex[i, j, kc] + Ex[i+1, j, kc]) * cos[f, n]
+                Ix[f, i, j] = Ix[f, i, j] - 0.5 * (Ex[i, j, kc] + Ex[i+1, j, kc]) * sin[f, n]
+                Ry[f, i, j] = Ry[f, i, j] + 0.5 * (Ey[i, j, kc] + Ey[i, j+1, kc]) * cos[f, n]
+                Iy[f, i, j] = Iy[f, i, j] - 0.5 * (Ey[i, j, kc] + Ey[i, j+1, kc]) * sin[f, n]
 
 
-#                          Rx     , Ry     , Rz     , Ix     , Iy     , Iz     , Hx       , Hy       , Hz       , cs, sn, ib, jb, ie, je, ct
-@cuda.jit(func_or_sig=void(fa[:,:], fa[:,:], fa[:,:], fa[:,:], fa[:,:], fa[:,:], fa[:,:,:], fa[:,:,:], fa[:,:,:], fa, fa, i4, i4, i4, i4, i4))
-def simul_fft_hfield(Rx, Ry, Rz, Ix, Iy, Iz, Hx, Hy, Hz, cos, sin, ib, jb, ie, je, cut):
-    i, j = cuda.grid(2)
-    if ib <= i < ie:
-        if jb <= j < je:
-            Rx[i, j] = Rx[i, j] + 0.25 * (Hx[i, j, cut] + Hx[i, j+1, cut] + Hx[i, j, cut+1] + Hx[i, j+1, cut+1]) * cos
-            Ix[i, j] = Ix[i, j] + 0.25 * (Hx[i, j, cut] + Hx[i, j+1, cut] + Hx[i, j, cut+1] + Hx[i, j+1, cut+1]) * sin
-            Ry[i, j] = Ry[i, j] + 0.25 * (Hy[i, j, cut] + Hy[i+1, j, cut] + Hy[i, j, cut+1] + Hy[i+1, j, cut+1]) * cos
-            Iy[i, j] = Iy[i, j] + 0.25 * (Hy[i, j, cut] + Hy[i+1, j, cut] + Hy[i, j, cut+1] + Hy[i+1, j, cut+1]) * sin
-            Rz[i, j] = Rz[i, j] + 0.25 * (Hz[i, j, cut] + Hz[i+1, j, cut] + Hz[i, j+1, cut] + Hz[i+1, j+1, cut]) * cos
-            Iz[i, j] = Iz[i, j] + 0.25 * (Hz[i, j, cut] + Hz[i+1, j, cut] + Hz[i, j+1, cut] + Hz[i+1, j+1, cut]) * sin
+#                          Rx       , Ry       , Ix       , Iy       , Hx       , Hy       , cos    , sin    , n , nf, ib, jb, ie, je, kc
+@cuda.jit(func_or_sig=void(fa[:,:,:], fa[:,:,:], fa[:,:,:], fa[:,:,:], fa[:,:,:], fa[:,:,:], fa[:,:], fa[:,:], i4, i4, i4, i4, i4, i4, i4))
+def simul_fft_hfield(Rx, Ry, Ix, Iy, Hx, Hy, cos, sin, n, nf, ib, jb, ie, je, kc):
+    f, i, j = cuda.grid(3)
+    if f < nf:
+        if ib <= i < ie:
+            if jb <= j < je:
+                Rx[f, i, j] = Rx[f, i, j] + 0.25 * (Hx[i, j, kc] + Hx[i, j+1, kc] + Hx[i, j, kc+1] + Hx[i, j+1, kc+1]) * cos[f, n]
+                Ix[f, i, j] = Ix[f, i, j] - 0.25 * (Hx[i, j, kc] + Hx[i, j+1, kc] + Hx[i, j, kc+1] + Hx[i, j+1, kc+1]) * sin[f, n]
+                Ry[f, i, j] = Ry[f, i, j] + 0.25 * (Hy[i, j, kc] + Hy[i+1, j, kc] + Hy[i, j, kc+1] + Hy[i+1, j, kc+1]) * cos[f, n]
+                Iy[f, i, j] = Iy[f, i, j] - 0.25 * (Hy[i, j, kc] + Hy[i+1, j, kc] + Hy[i, j, kc+1] + Hy[i+1, j, kc+1]) * sin[f, n]
 
 
 @njit(parallel=True)
@@ -339,7 +337,6 @@ def generate_fg_mask(num_x, num_y, num_z, bord_x, bord_y, wg_height, wg_width, p
         else:
             raise Exception('Invalid correlation type selected')
     elif mode =='load':
-        print('roughness not ready yet, making smooth mask')
         var_wrt_len_upper = np.load(upper_name)
         var_wrt_len_lower = np.load(lower_name)
     elif mode == 'smooth':
@@ -392,3 +389,13 @@ def map_hfield_plane_td(Hxz, Hyz, Hzz, Hx, Hy, Hz, step, kcut, ie, je):
             Hxz[step, i, j] = 0.25 * (Hx[i, j, kcut] + Hx[i, j+1, kcut] + Hx[i, j, kcut+1] + Hx[i, j+1, kcut+1])
             Hyz[step, i, j] = 0.25 * (Hy[i, j, kcut] + Hy[i+1, j, kcut] + Hy[i, j, kcut+1] + Hy[i+1, j, kcut+1])
             Hzz[step, i, j] = 0.25 * (Hz[i, j, kcut] + Hz[i+1, j, kcut] + Hz[i, j+1, kcut] + Hz[i+1, j+1, kcut])
+
+
+@njit(parallel=True)
+def map_sfft_coeffs(cosE, sinE, cosH, sinH, freqs, dt, nt):
+    for f in prange(len(freqs)):
+        for n in prange(nt):
+            cosE[f, n] = np.cos( 2 * np.pi * freqs[f] * (n+0.0) * dt)
+            sinE[f, n] = np.sin( 2 * np.pi * freqs[f] * (n+0.0) * dt)
+            cosH[f, n] = np.cos( 2 * np.pi * freqs[f] * (n+0.5) * dt)
+            sinH[f, n] = np.sin( 2 * np.pi * freqs[f] * (n+0.5) * dt)

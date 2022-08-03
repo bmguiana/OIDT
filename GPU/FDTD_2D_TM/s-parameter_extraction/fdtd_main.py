@@ -42,7 +42,7 @@ usr = pickle.load(uf)
 
 print('The simulation size will be: {:} x {:} square cells over {:} time steps\n\n\n'.format(cfg.nx, cfg.ny, cfg.nt))
 aux.mkdir(usr['output_dir'])
-cuda.select_device(0)
+cuda.select_device(1)
 
 # =============================================================================
 # Main array definition
@@ -85,26 +85,25 @@ EPS_EZ = EPS_MASK.copy().astype(usr['precision'])
 CBZ = cfg.delta_t / EPS_EZ
 DB = cfg.delta_t / cfg.mu
 
+cosE = np.zeros([usr['sparam_num_freqs'], cfg.nt], dtype=usr['precision'])
+cosH = np.zeros([usr['sparam_num_freqs'], cfg.nt], dtype=usr['precision'])
+sinE = np.zeros([usr['sparam_num_freqs'], cfg.nt], dtype=usr['precision'])
+sinH = np.zeros([usr['sparam_num_freqs'], cfg.nt], dtype=usr['precision'])
+
+funcs.map_sfft_coeffs(cosE, sinE, cosH, sinH, cfg.sparam_freqs, cfg.delta_t, cfg.nt)
+
 # Define data storage arrays
-EZr = np.zeros([cfg.nx, cfg.ny], dtype=usr['precision'])
-HXr = np.zeros([cfg.nx, cfg.ny], dtype=usr['precision'])
-HYr = np.zeros([cfg.nx, cfg.ny], dtype=usr['precision'])
+EZ1r = np.zeros([usr['sparam_num_freqs'], cfg.ny], dtype=usr['precision'])
+HY1r = np.zeros([usr['sparam_num_freqs'], cfg.ny], dtype=usr['precision'])
 
-EZi = np.zeros([cfg.nx, cfg.ny], dtype=usr['precision'])
-HXi = np.zeros([cfg.nx, cfg.ny], dtype=usr['precision'])
-HYi = np.zeros([cfg.nx, cfg.ny], dtype=usr['precision'])
+EZ1i = np.zeros([usr['sparam_num_freqs'], cfg.ny], dtype=usr['precision'])
+HY1i = np.zeros([usr['sparam_num_freqs'], cfg.ny], dtype=usr['precision'])
 
-EZ_P1 = np.zeros([cfg.nt, cfg.ny], dtype=usr['precision'])
-HX_P1 = np.zeros([cfg.nt, cfg.ny], dtype=usr['precision'])
-HY_P1 = np.zeros([cfg.nt, cfg.ny], dtype=usr['precision'])
+EZ2r = np.zeros([usr['sparam_num_freqs'], cfg.ny], dtype=usr['precision'])
+HY2r = np.zeros([usr['sparam_num_freqs'], cfg.ny], dtype=usr['precision'])
 
-EZ_P2 = np.zeros([cfg.nt, cfg.ny], dtype=usr['precision'])
-HX_P2 = np.zeros([cfg.nt, cfg.ny], dtype=usr['precision'])
-HY_P2 = np.zeros([cfg.nt, cfg.ny], dtype=usr['precision'])
-
-EZZ = np.zeros([cfg.nt, cfg.ny], dtype=usr['precision'])
-HXZ = np.zeros([cfg.nt, cfg.ny], dtype=usr['precision'])
-HYZ = np.zeros([cfg.nt, cfg.ny], dtype=usr['precision'])
+EZ2i = np.zeros([usr['sparam_num_freqs'], cfg.ny], dtype=usr['precision'])
+HY2i = np.zeros([usr['sparam_num_freqs'], cfg.ny], dtype=usr['precision'])
 
 # =============================================================================
 # Begin CPML
@@ -137,22 +136,22 @@ PSI_HX_YHI = np.zeros([cfg.nx, usr['num_cpml']], dtype=usr['precision'])  # Hx c
 PSI_HY_XLO = np.zeros([usr['num_cpml'], cfg.ny], dtype=usr['precision'])  # Hy correction field, low-side x-boundary
 PSI_HY_XHI = np.zeros([usr['num_cpml'], cfg.ny], dtype=usr['precision'])  # Hy correction field, high-side x-boundary
 
-SE = np.zeros(usr['num_cpml'], dtype=usr['precision'])                            # Electric field sigma grading
-KE = np.zeros(usr['num_cpml'], dtype=usr['precision'])                            # Electric field kappa grading
-AE = np.zeros(usr['num_cpml'], dtype=usr['precision'])                            # Electric field alpha grading
-BE = np.zeros(usr['num_cpml'], dtype=usr['precision'])                            # Electric field auxiliary variable b
-CE = np.zeros(usr['num_cpml'], dtype=usr['precision'])                            # Electric field auxiliary variable c
+SE = np.zeros(usr['num_cpml'], dtype=usr['precision'])                    # Electric field sigma grading
+KE = np.zeros(usr['num_cpml'], dtype=usr['precision'])                    # Electric field kappa grading
+AE = np.zeros(usr['num_cpml'], dtype=usr['precision'])                    # Electric field alpha grading
+BE = np.zeros(usr['num_cpml'], dtype=usr['precision'])                    # Electric field auxiliary variable b
+CE = np.zeros(usr['num_cpml'], dtype=usr['precision'])                    # Electric field auxiliary variable c
 
-SH = np.zeros(usr['num_cpml'], dtype=usr['precision'])                            # Magnetic field sigma grading
-KH = np.zeros(usr['num_cpml'], dtype=usr['precision'])                            # Magnetic field kappa grading
-AH = np.zeros(usr['num_cpml'], dtype=usr['precision'])                            # Magnetic field alpha grading
-BH = np.zeros(usr['num_cpml'], dtype=usr['precision'])                            # Magnetic field auxiliary variable b
-CH = np.zeros(usr['num_cpml'], dtype=usr['precision'])                            # Magnetic field auxiliary variable c
+SH = np.zeros(usr['num_cpml'], dtype=usr['precision'])                    # Magnetic field sigma grading
+KH = np.zeros(usr['num_cpml'], dtype=usr['precision'])                    # Magnetic field kappa grading
+AH = np.zeros(usr['num_cpml'], dtype=usr['precision'])                    # Magnetic field alpha grading
+BH = np.zeros(usr['num_cpml'], dtype=usr['precision'])                    # Magnetic field auxiliary variable b
+CH = np.zeros(usr['num_cpml'], dtype=usr['precision'])                    # Magnetic field auxiliary variable c
 
-KXE = np.ones(cfg.nx, dtype=usr['precision']) * cfg.delta_x                    # Electric field x-direction kappa division
-KYE = np.ones(cfg.ny, dtype=usr['precision']) * cfg.delta_x                    # Electric field y-direction kappa division
-KXH = np.ones(cfg.nx, dtype=usr['precision']) * cfg.delta_x                    # Magnetic field x-direction kappa division
-KYH = np.ones(cfg.ny, dtype=usr['precision']) * cfg.delta_x                    # Magnetic field y-direction kappa division
+KXE = np.ones(cfg.nx, dtype=usr['precision']) * cfg.delta_x               # Electric field x-direction kappa division
+KYE = np.ones(cfg.ny, dtype=usr['precision']) * cfg.delta_x               # Electric field y-direction kappa division
+KXH = np.ones(cfg.nx, dtype=usr['precision']) * cfg.delta_x               # Magnetic field x-direction kappa division
+KYH = np.ones(cfg.ny, dtype=usr['precision']) * cfg.delta_x               # Magnetic field y-direction kappa division
 
 # Assign array values
 for d in range(usr['num_cpml']):
@@ -173,10 +172,10 @@ for d in range(usr['num_cpml']):
     KYE[jb+usr['num_cpml']-(d+1)] = KE[d] * cfg.delta_x  # dy
     KXH[ib+usr['num_cpml']-d] = KH[d] * cfg.delta_x      # dx
     KYH[jb+usr['num_cpml']-d] = KH[d] * cfg.delta_x      # dy
-    KXE[ie-(d+1)] = KE[-(d+1)] * cfg.delta_x          # dx
-    KYE[je-(d+1)] = KE[-(d+1)] * cfg.delta_x          # dy
-    KXH[ie-(d+1)] = KH[-(d+1)] * cfg.delta_x          # dx
-    KYH[je-(d+1)] = KH[-(d+1)] * cfg.delta_x          # dy
+    KXE[ie-(d+1)] = KE[-(d+1)] * cfg.delta_x             # dx
+    KYE[je-(d+1)] = KE[-(d+1)] * cfg.delta_x             # dy
+    KXH[ie-(d+1)] = KH[-(d+1)] * cfg.delta_x             # dx
+    KYH[je-(d+1)] = KH[-(d+1)] * cfg.delta_x             # dy
 
 # =============================================================================
 # GPU Processing Setup
@@ -197,6 +196,12 @@ tpb = (tpbx, tpby)
 bpg_xy = (bpgx, bpgy)
 bpg_xp = (bpgx, bpgy_cpml)
 bpg_py = (bpgx_cpml, bpgy)
+
+tpb_sfft = (1, 128)
+bpg_sfft_f = int(np.ceil(usr['sparam_num_freqs'] / tpb_sfft[0]))
+bpg_sfft_y = int(np.ceil(cfg.ny / tpb_sfft[1]))
+
+bpg_sfft = (bpg_sfft_f, bpg_sfft_y)
 
 # GPU process feedbak
 cells_on_device = 10*(cfg.nx * cfg.ny) + 4*usr['num_cpml']*(cfg.nx + cfg.ny + 1) + 2*(cfg.nx + cfg.ny)
@@ -240,21 +245,20 @@ dKYE = cuda.to_device(KYE)
 dKYH = cuda.to_device(KYH)
 
 # Data recording arrays
-dEZr = cuda.to_device(EZr)  # nx x ny
-dHXr = cuda.to_device(HXr)  # nx x ny
-dHYr = cuda.to_device(HYr)  # nx x ny
-dEZi = cuda.to_device(EZi)  # nx x ny
-dHXi = cuda.to_device(HXi)  # nx x ny
-dHYi = cuda.to_device(HYi)  # nx x ny
-dEZZ = cuda.to_device(EZZ)  # nt x ny
-dHXZ = cuda.to_device(HXZ)  # nt x ny
-dHYZ = cuda.to_device(HYZ)  # nt x ny
-dEZ_P1 = cuda.to_device(EZ_P1)  # nt x ny
-dHX_P1 = cuda.to_device(HX_P1)  # nt x ny
-dHY_P1 = cuda.to_device(HY_P1)  # nt x ny
-dEZ_P2 = cuda.to_device(EZ_P2)  # nt x ny
-dHX_P2 = cuda.to_device(HX_P2)  # nt x ny
-dHY_P2 = cuda.to_device(HY_P2)  # nt x ny
+dEZ1r = cuda.to_device(EZ1r)  # nf x ny
+dHY1r = cuda.to_device(HY1r)  # nf x ny
+dEZ1i = cuda.to_device(EZ1i)  # nf x ny
+dHY1i = cuda.to_device(HY1i)  # nf x ny
+
+dEZ2r = cuda.to_device(EZ2r)  # nf x ny
+dHY2r = cuda.to_device(HY2r)  # nf x ny
+dEZ2i = cuda.to_device(EZ2i)  # nf x ny
+dHY2i = cuda.to_device(HY2i)  # nf x ny
+
+dcosE = cuda.to_device(cosE)
+dsinE = cuda.to_device(sinE)
+dcosH = cuda.to_device(cosH)
+dsinH = cuda.to_device(sinH)
 
 # =============================================================================
 # Time stepping loop
@@ -294,15 +298,10 @@ for n in range(cfg.nt):
     funcs.update_pml_hy_xinc[bpg_py, tpb](dPSI_HY_XLO, dPSI_HY_XHI, dEZ, dHY, dBH, dCH, DB, cfg.delta_x, usr['num_cpml'], ib, jb, ie, je)
 
     # Record Data
-    # funcs.simul_fft_efield[bpg_xy, tpb](dEZr, dEZi, dEZ, cfg.cosE[n], cfg.sinE[n], usr['num_cpml'], usr['num_cpml'], cfg.nx-usr['num_cpml'], cfg.ny-usr['num_cpml'])
-    # funcs.simul_fft_hfield[bpg_xy, tpb](dHXr, dHYr, dHXi, dHYi, dHX, dHY, cfg.cosH[n], cfg.sinH[n], usr['num_cpml'], usr['num_cpml'], cfg.nx-usr['num_cpml'], cfg.ny-usr['num_cpml'])
-    # funcs.map_efield_yline[bpgy, tpby](dEZZ, dEZ, n, cfg.cx, cfg.ny)
-    # funcs.map_hfield_yline[bpgy, tpby](dHXZ, dHYZ, dHX, dHY, n, cfg.cx, cfg.ny)
-
-    funcs.map_efield_yline[bpgy, tpby](dEZ_P1, dEZ, n, cfg.p1x, cfg.ny)
-    funcs.map_efield_yline[bpgy, tpby](dEZ_P2, dEZ, n, cfg.p2x, cfg.ny)
-    funcs.map_hfield_yline[bpgy, tpby](dHX_P1, dHY_P1, dHX, dHY, n, cfg.p1x, cfg.ny)
-    funcs.map_hfield_yline[bpgy, tpby](dHX_P2, dHY_P2, dHX, dHY, n, cfg.p2x, cfg.ny)
+    funcs.simul_fft_efield[bpg_sfft, tpb_sfft](dEZ1r, dEZ1i, dEZ, dcosE, dsinE, n, usr['sparam_num_freqs'], cfg.p1x, usr['num_cpml'], cfg.ny-usr['num_cpml'])
+    funcs.simul_fft_hfield[bpg_sfft, tpb_sfft](dHY1r, dHY1i, dHY, dcosH, dsinH, n, usr['sparam_num_freqs'], cfg.p1x, usr['num_cpml'], cfg.ny-usr['num_cpml'])
+    funcs.simul_fft_efield[bpg_sfft, tpb_sfft](dEZ2r, dEZ2i, dEZ, dcosE, dsinE, n, usr['sparam_num_freqs'], cfg.p2x, usr['num_cpml'], cfg.ny-usr['num_cpml'])
+    funcs.simul_fft_hfield[bpg_sfft, tpb_sfft](dHY2r, dHY2i, dHY, dcosH, dsinH, n, usr['sparam_num_freqs'], cfg.p2x, usr['num_cpml'], cfg.ny-usr['num_cpml'])
 
     # Progress feedback
     last40 = np.roll(last40, 1)
@@ -313,11 +312,13 @@ for n in range(cfg.nt):
         avg_iter_time = np.average(last40)
         cu_time = time() - loop_start_time
         time_rem = avg_iter_time * ( cfg.nt - n - 1 )
+        cuda_mem = cuda.current_context().get_memory_info()
         print('\nStep {} of {} done, {:.1f} % complete'.format(n+1, cfg.nt, n/(cfg.nt-2)*100))
-        print('Loop time elapsed:         {} (hr) {} (min) {:.1f} (s)'.format(int(cu_time/3600), int((cu_time - 3600*(cu_time//3600))//60), cu_time - 60*((cu_time - 3600*(cu_time//3600))//60) - 3600*(cu_time//3600)))
-        print('Avg. loop period:          {:.2f} (ms)'.format(avg_iter_time*1000))
-        print('Estimated time remaining:  {} (hr) {} (min) {:.1f} (s)'.format(int(time_rem/3600), int((time_rem - 3600*(time_rem//3600))//60), time_rem - 60*((time_rem - 3600*(time_rem//3600))//60) - 3600*(time_rem//3600)))
-        print('Memory used:              {:6.3f} (MB)'.format(process.memory_info().rss/1024/1024))
+        print('Loop time elapsed:         {} hr {} min {:.1f} s'.format(int(cu_time/3600), int((cu_time - 3600*(cu_time//3600))//60), cu_time - 60*((cu_time - 3600*(cu_time//3600))//60) - 3600*(cu_time//3600)))
+        print('Avg. loop period:          {:.2f} ms'.format(avg_iter_time*1000))
+        print('Estimated time remaining:  {} hr {} min {:.1f} s'.format(int(time_rem/3600), int((time_rem - 3600*(time_rem//3600))//60), time_rem - 60*((time_rem - 3600*(time_rem//3600))//60) - 3600*(time_rem//3600)))
+        print('Host memory used:          {:6.3f} MB'.format(process.memory_info().rss/1024/1024))
+        print('Device memory used:        {:6.3f} MB'.format((cuda_mem[1] - cuda_mem[0])/1024/1024))
         print('MC/sec:                    {}'.format((cfg.nx * cfg.ny) / (1e6 * avg_iter_time)))
 
 # =============================================================================
@@ -344,53 +345,42 @@ print('Speed in MCells/sec: {:}'.format(SPEED_MCells_Sec))
 # =============================================================================
 
 print('saving results')
-dEZr.copy_to_host(EZr)
-dHXr.copy_to_host(HXr)
-dHYr.copy_to_host(HYr)
-dEZi.copy_to_host(EZi)
-dHXi.copy_to_host(HXi)
-dHYi.copy_to_host(HYi)
 
-if usr['precision'] == np.float32:
-    EZF = np.zeros([cfg.nx, cfg.ny], dtype=np.complex64)
-    HXF = np.zeros([cfg.nx, cfg.ny], dtype=np.complex64)
-    HYF = np.zeros([cfg.nx, cfg.ny], dtype=np.complex64)
-elif usr['precision'] == np.float64:
-    EZF = np.zeros([cfg.nx, cfg.ny], dtype=np.complex128)
-    HXF = np.zeros([cfg.nx, cfg.ny], dtype=np.complex128)
-    HYF = np.zeros([cfg.nx, cfg.ny], dtype=np.complex128)
+dEZ1r.copy_to_host(EZ1r)
+dHY1r.copy_to_host(HY1r)
+dEZ1i.copy_to_host(EZ1i)
+dHY1i.copy_to_host(HY1i)
 
-EZF = EZr + 1j*EZi
-HXF = HXr + 1j*HXi
-HYF = HYr + 1j*HYi
+dEZ2r.copy_to_host(EZ2r)
+dHY2r.copy_to_host(HY2r)
+dEZ2i.copy_to_host(EZ2i)
+dHY2i.copy_to_host(HY2i)
 
-if usr['sim_type'] == 'full_fft':
-    np.save('./{}/ez_fft{}'.format(usr['output_dir'], cfg.roughness_profile), EZF)
-    np.save('./{}/hx_fft{}'.format(usr['output_dir'], cfg.roughness_profile), HXF)
-    np.save('./{}/hy_fft{}'.format(usr['output_dir'], cfg.roughness_profile), HYF)
-elif usr['sim_type'] == 'zwave':
-    np.save('./{}/ez_zwave'.format(usr['output_dir']), dEZZ.copy_to_host(EZZ))
-    np.save('./{}/hx_zwave'.format(usr['output_dir']), dHXZ.copy_to_host(HXZ))
-    np.save('./{}/hy_zwave'.format(usr['output_dir']), dHYZ.copy_to_host(HYZ))
-elif usr['sim_type'] == 's-param':
+EZF1 = EZ1r + 1j*EZ1i
+HYF1 = HY1r + 1j*HY1i
+
+EZF2 = EZ2r + 1j*EZ2i
+HYF2 = HY2r + 1j*HY2i
+
+if usr['sim_type'] == 's-param':
     if kind == 'i':
         if direction == 'f':
-            np.save('./{}/ez_fi_l{}'.format(usr['output_dir'], line+1), dEZ_P1.copy_to_host(EZ_P1))
-            np.save('./{}/hy_fi_l{}'.format(usr['output_dir'], line+1), dHY_P1.copy_to_host(HY_P1))
+            np.save('./{}/ez_fi_l{}'.format(usr['output_dir'], line+1), EZF1)
+            np.save('./{}/hy_fi_l{}'.format(usr['output_dir'], line+1), HYF1)
         elif direction == 'b':
-            np.save('./{}/ez_bi_l{}'.format(usr['output_dir'], line+1), dEZ_P2.copy_to_host(EZ_P2))
-            np.save('./{}/hy_bi_l{}'.format(usr['output_dir'], line+1), dHY_P2.copy_to_host(HY_P2))
+            np.save('./{}/ez_bi_l{}'.format(usr['output_dir'], line+1), EZF2)
+            np.save('./{}/hy_bi_l{}'.format(usr['output_dir'], line+1), HYF2)
     elif kind == 'r':
         if direction == 'f':
-            np.save('./{}/ez_ft_l{}'.format(usr['output_dir'], line+1), dEZ_P1.copy_to_host(EZ_P1))
-            np.save('./{}/hy_ft_l{}'.format(usr['output_dir'], line+1), dHY_P1.copy_to_host(HY_P1))
-            np.save('./{}/ez_br_l{}'.format(usr['output_dir'], line+1), dEZ_P2.copy_to_host(EZ_P2))
-            np.save('./{}/hy_br_l{}'.format(usr['output_dir'], line+1), dHY_P2.copy_to_host(HY_P2))
+            np.save('./{}/ez_ft_l{}'.format(usr['output_dir'], line+1), EZF1)
+            np.save('./{}/hy_ft_l{}'.format(usr['output_dir'], line+1), HYF1)
+            np.save('./{}/ez_br_l{}'.format(usr['output_dir'], line+1), EZF2)
+            np.save('./{}/hy_br_l{}'.format(usr['output_dir'], line+1), HYF2)
         elif direction == 'b':
-            np.save('./{}/ez_fr_l{}'.format(usr['output_dir'], line+1), dEZ_P1.copy_to_host(EZ_P1))
-            np.save('./{}/hy_fr_l{}'.format(usr['output_dir'], line+1), dHY_P1.copy_to_host(HY_P1))
-            np.save('./{}/ez_bt_l{}'.format(usr['output_dir'], line+1), dEZ_P2.copy_to_host(EZ_P2))
-            np.save('./{}/hy_bt_l{}'.format(usr['output_dir'], line+1), dHY_P2.copy_to_host(HY_P2))
+            np.save('./{}/ez_fr_l{}'.format(usr['output_dir'], line+1), EZF1)
+            np.save('./{}/hy_fr_l{}'.format(usr['output_dir'], line+1), HYF1)
+            np.save('./{}/ez_bt_l{}'.format(usr['output_dir'], line+1), EZF2)
+            np.save('./{}/hy_bt_l{}'.format(usr['output_dir'], line+1), HYF2)
 else:
     pass
 

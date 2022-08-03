@@ -124,26 +124,24 @@ def update_pml_hy_xinc(Psi_Hy_xlo, Psi_Hy_xhi, Ez, Hy, bh, ch, db, dx, pmle, ib,
             Hy[ie-pmle+i, j] = Hy[ie-pmle+i, j] + db * Psi_Hy_xhi[i, j]
 
 
-#                          Rz     , Iz     , Ez     , cs, sn, ib, jb, ie, je
-@cuda.jit(func_or_sig=void(fa[:,:], fa[:,:], fa[:,:], fa, fa, i4, i4, i4, i4))
-def simul_fft_efield(Rz, Iz, Ez, cos, sin, ib, jb, ie, je):
-    i, j = cuda.grid(2)
-    if ib <= i < ie:
+#                          Rz     , Iz     , Ez     , cos    , sin    , n , nf, ic, jb je
+@cuda.jit(func_or_sig=void(fa[:,:], fa[:,:], fa[:,:], fa[:,:], fa[:,:], i4, i4, i4, i4, i4))
+def simul_fft_efield(Rz, Iz, Ez, cos, sin, n, nf, ic, jb, je):
+    f, j = cuda.grid(2)
+    if f < nf:
         if jb <= j < je:
-            Rz[i, j] = Rz[i, j] + 0.5 * (Ez[i, j] + Ez[i, j]) * cos
-            Iz[i, j] = Iz[i, j] - 0.5 * (Ez[i, j] + Ez[i, j]) * sin
+            Rz[f, j] = Rz[f, j] + Ez[ic, j] * cos[f, n]
+            Iz[f, j] = Iz[f, j] - Ez[ic, j] * sin[f, n]
 
 
-#                          Rx     , Ry     , Ix     , Iy     , Hx     , Hy     , cs, sn, ib, jb, ie, je
-@cuda.jit(func_or_sig=void(fa[:,:], fa[:,:], fa[:,:], fa[:,:], fa[:,:], fa[:,:], fa, fa, i4, i4, i4, i4))
-def simul_fft_hfield(Rx, Ry, Ix, Iy, Hx, Hy, cos, sin, ib, jb, ie, je):
-    i, j = cuda.grid(2)
-    if ib <= i < ie:
+#                          Ry     , Iy     , Hy     , cos    , sin    , n , nf, ic, jb, je
+@cuda.jit(func_or_sig=void(fa[:,:], fa[:,:], fa[:,:], fa[:,:], fa[:,:], i4, i4, i4, i4, i4))
+def simul_fft_hfield(Ry, Iy, Hy, cos, sin, n, nf, ic, jb, je):
+    f, j = cuda.grid(2)
+    if f < nf:
         if jb <= j < je:
-            Rx[i, j] = Rx[i, j] + 0.5 * (Hx[i, j] + Hx[i, j+1]) * cos
-            Ix[i, j] = Ix[i, j] - 0.5 * (Hx[i, j] + Hx[i, j+1]) * sin
-            Ry[i, j] = Ry[i, j] + 0.5 * (Hy[i, j] + Hy[i+1, j]) * cos
-            Iy[i, j] = Iy[i, j] - 0.5 * (Hy[i, j] + Hy[i+1, j]) * sin
+            Ry[f, j] = Ry[f, j] + 0.5 * (Hy[ic, j] + Hy[ic+1, j]) * cos[f, n]
+            Iy[f, j] = Iy[f, j] - 0.5 * (Hy[ic, j] + Hy[ic+1, j]) * sin[f, n]
 
 
 def make_profile(length_eff, rough_std, rough_acl, dx, stol, atol, mtol):
@@ -227,3 +225,13 @@ def map_hfield_yline(Hxz, Hyz, Hx, Hy, zwstep, icut, je):
     if j < je:
         Hxz[zwstep, j] = 0.5 * (Hx[icut, j] + Hx[icut, j+1])
         Hyz[zwstep, j] = 0.5 * (Hy[icut, j] + Hy[icut+1, j])
+
+
+@njit(parallel=True)
+def map_sfft_coeffs(cosE, sinE, cosH, sinH, freqs, dt, nt):
+    for f in prange(len(freqs)):
+        for n in prange(nt):
+            cosE[f, n] = np.cos( 2 * np.pi * freqs[f] * (n+0.0) * dt)
+            sinE[f, n] = np.sin( 2 * np.pi * freqs[f] * (n+0.0) * dt)
+            cosH[f, n] = np.cos( 2 * np.pi * freqs[f] * (n+0.5) * dt)
+            sinH[f, n] = np.sin( 2 * np.pi * freqs[f] * (n+0.5) * dt)

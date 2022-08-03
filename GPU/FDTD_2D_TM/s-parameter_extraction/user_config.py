@@ -1,8 +1,9 @@
 """
 Author: B. Guiana
 
-Description:
-
+Description: User specified simulation parameters. A short description of each
+             varaible follows as an in-line comment. Units and data types are
+             provided in parentheses as (unit, dtype) where applicable.
 
 Acknowledgement: This project was completed as part of research conducted with
                  my major professor and advisor, Prof. Ata Zadehgol, as part of
@@ -63,6 +64,10 @@ ctype = 3                      # Roughness profile correlation type for upper an
 
 precision = np.float32         # Floating point arithmetic precision. Choose np.float32 or np.float64
 sim_type = 's-param'           # Simulation type. Choose 's-param'. Other outputs not ready yet.
+auto_condition = True          # Automatically condition settings for "Source
+                               #     parameters" and "Resolution and duration"
+                               #     for the provided "S-Parameter Extraction"
+                               #     settings (, bool)
 
 feedback_at_n_percent = 10     # Interval between feedback readouts (%, int or float)
 profile_number = 0             # Roughness profile index number (, int)
@@ -81,8 +86,13 @@ prof_dir = 'rough_profiles'    # Storage directory for rough profiles (, str)
                                #     A new folder will be generated in the
                                #     working directory.
 
-sparam_file = 'example'        # Output file name for S-Parameter extraction (, str)
+sparam_file = 'tm_fine_rough'  # Output file name for S-Parameter extraction (, str)
 spice_file = 'full_network'    # Output file name for equivalent circuit [spice format] (, str)
+
+# S-Parameter Extraction
+sparam_fmin = 170e12           # Minimum frequency for S-Parameter output file (Hz, float)
+sparam_fmax = 230e12           # Maximum frequency for S-Parameter output file (Hz, float)
+sparam_num_freqs = 10001        # Number of frequencies between fmin and fmax, inclusive (, int)
 
 # Source parameters
 source_type = 2                # Input source type (, int)
@@ -92,7 +102,7 @@ source_type = 2                # Input source type (, int)
 source_amp = 5.0               # Source magnitude (V / m, float)
 wave_packet_bw = 0.5           # Wave-packet bandwidth; may be safely ignored when not using st 2 (%, float)
 gauss_pulse_deg = -6           # Frequency domain signal strength at f0, must be negative; may be safely ignored when not using st 1 (dB, float)
-f0 = 194.8e12                  # Fundamental frequency; used for st 2 and st 3 (Hz, float)
+f0 = 194.8e12                  # Fundamental frequency; should be between sparm_fmin and sparam_fmax (Hz, float)
 
 # Resolution and duration
 harmonics = 1.000              # Number of harmonics above fundamental frequency to use (, float)
@@ -103,3 +113,4 @@ points_per_wl = 40             # Number of points per minimum wavelength (cells,
 num_cpml = 20                  # CPML layer size around simulation space (cells, int)
 buffer_xhat = 20               # Buffer length between source and cpml region size, x-direction (cells, int)
 ny_clad_wl = 2.0               # Buffer between waveguide core and cpml regions, y-direction (lambda, float)
+

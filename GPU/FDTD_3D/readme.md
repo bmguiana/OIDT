@@ -1,10 +1,12 @@
 # OIDT FDTD 3D
 ### Author: Brian Guiana
-### Date: 1 July 2022
+### Date: 2 August 2022
+
 ## Acknowledgement
-This project was completed as part of research conducted with my major professor and advisor, Prof. Ata Zadehgol, as part of the Applied and Computational Electromagnetics Signal and Power Integrity (ACEM-SPI) Lab while working toward the Ph.D. in Electrical Engineering at the University of Idaho, Moscow, Idaho, USA. This project was funded, in part, by the National Science Foundation (NSF); award #1816542 [1].
+This project was completed as part of research conducted with my major professor and advisor, Prof. Ata Zadehgol, at the Applied and Computational Electromagnetics Signal and Power Integrity (ACEM-SPI) Lab while working toward the Ph.D. in Electrical Engineering at the University of Idaho, Moscow, Idaho, USA. This project was funded, in part, by the National Science Foundation (NSF); award #1816542 [1].
+
 ## Description
-This set of code uses the 3D TE and TM modes of FDTD simulation. The code is presented as 3 example file sets. This readme describes the intended operation instructions for each of these, as well as the output files expected.
+This set of code uses the 3D TE and TM modes of FDTD simulation. The code is presented as 3 example file sets: Wave Impedance, Calculate Scattering Loss, and S-Parameter Extraction. This readme describes the intended operation instructions for Wave Impedance and Calculate Scattering Loss, as well as the output files expected. A more detailed readme for S-Parameter Extraction is included in the corresponding subfolder.
 
 ## How to Generate Results
 ### General settings
@@ -44,7 +46,6 @@ A rough profiles folder is required for operation.
 - `fdtd_funcs.py`: None
 - `fdtd_main.py`: 2 .npy files.
 
-
 ### Calculate Scattering Loss
 - `aux_funcs.py`: None
 - `analysis.py`: Printed analysis of the .npy file from `automated_results_collection.py`
@@ -52,3 +53,4 @@ A rough profiles folder is required for operation.
 - `fdtd_config.py`: None
 - `fdtd_funcs.py`: None
 - `fdtd_main.py`: 2 .npy files.
+

@@ -22,7 +22,6 @@ from subprocess import run
 if usr.sim_type == 's-param':
     print('launching S-paramter Extraction Simulation')
     print('Simulating {} coupled lines ({} sims total)'.format(usr.num_lines, usr.num_lines*4))
-    print('Note: All simulations are the same size')
 
     for line in range(usr.num_lines):
         print('Evaluating line {}'.format(line+1))
