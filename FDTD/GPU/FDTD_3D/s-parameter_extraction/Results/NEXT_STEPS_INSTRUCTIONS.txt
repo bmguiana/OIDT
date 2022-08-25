@@ -1,0 +1,3 @@
+To continue with equivalent circuit synthesis and passivity enforcement:
+1. Copy *.sNp from the folder ./Results to the folder SROPEE/Input
+2. Follow the directions in SROPEE/Instructions.pdf for further instructions on continuing with equivalent circuit synthesis and passivity enforcement

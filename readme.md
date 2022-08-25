@@ -2,76 +2,13 @@
 
 ### Author: Brian Guiana
 ### Created: 10 December 2021
-### Updated: 12 August 2022
+### Updated: 25 August 2022
 
 ## Acknowledgement
-This project was completed as part of research conducted with my major professor and advisor, Prof. Ata Zadehgol, at the Applied and Computational Electromagnetics Signal and Power Integrity (ACEM-SPI) Lab while working toward the Ph.D. in Electrical Engineering at the University of Idaho, Moscow, Idaho, USA. This project was funded, in part, by the National Science Foundation (NSF); award #1816542 [1].
+This project was completed as part of research conducted with my major professor and advisor, Prof. Ata Zadehgol, at the Applied/Computational Electromagnetics and Signal/Power Integrity (ACEM-SPI) Lab while working toward the Ph.D. in Electrical Engineering at the University of Idaho, Moscow, Idaho, USA. This project was funded, in part, by the National Science Foundation (NSF); award #1816542 [1].
 
 ## Project Description
-The computational electromagnetics (CEM) portion of the OIDT is based on the Finite-Difference Time-Domain (FDTD) method for numerically solving electromagnetic fields with the Python language. The current version allows users to choose between CPU and GPU parallelization to enhance the speed at which numerical experiments can be completed (development is currently focused on GPU parallelization). The code contained herein is capable of simulating fully 3D structures as well as the 2D transverse electric (TE) and transverse magnetic (TM) modes, each in a cartesian coordinate system. The OIDT is optimized for simulation of dielectric waveguide structures operating in the terahertz (THz) regime, but simulation of additional related structures is possible. Each code body is validated using the surface wave impedance as measured _below_ the waveguide structure, where _below_ is defined as along the negative y-direction. Each GPU parallelized code body is capable of extracting scattering parameters (S-parameters) while simulating random surface roughness. The S-parameter extraction methodology with GPU parallelization uses the Simultaneous Fast Fourier Transform (SFFT) at each provided frequency [13] during simulation, and the CPU parallelization code collects and post-processes time-domain data with the built-in Numpy Fast Fourier Transform (FFT). Disk storage requirements and memory usage scales linearly using SFFT and either quadratically (for 2D sims) or cubically (for 3D sims) using FFT. Examples of each of the primary functions are demonstrated with sample code.
-
-The circuit synthesis portion of the OIDT was authored by Rasul Choupanzadeh and modified to fit with S-parameters extracted using the OIDT. The currently implemented version converts touchstone format scattering parameters into an equivalent SPICE netlist (`*.sp` file) [16]. The circuit synthesis portion is currently only available with GPU parallelized S-parameter extraction with updates to CPU parallelized S-parameter extraction coming soon.
-
-A visualization module has been included for 2D TM mode illustrating (though animation) several potential options and combinations for the OIDT on smooth waveguides. See the included `readme.txt` file in the folder `Visualization` for more details.
-
-## Simulation Geometry
-The geometry for the 3D simulations is shown in `geometry_3d.pdf`, and the geometry for 2D simulations is shown in `geometry_2d.pdf`. In the 3D code body, the electric field intensity (E-field) and magnetic field intensity (H-field) both have components in the x-, y-, and z-directions (Ex, Ey, Ez, Hx, Hy, Hz). In the 2D code body, the assumed geometry forces the partial derivative with respect to the z-direction to zero, so variability is limited to only the x- and y-directions. The TE mode has field components Ex, Ey, and Hz. The TM mode has field components Ez, Hx, and Hy. In the 3D body the fields are excited by the Ex field component on CPU and either the Ey or Hy field component on GPU, and wave propagation is along the z-direction. In the 2D body the fields are excited by Ez for TM and Hz for TE, and wave propagation is along the x-direction.
-
-The fundamental structure of the simulations does not change dramatically between 2D and 3D simulation. These have been clearly labelled in `geometry_2d.pdf`, but several labels have been omitted from `geometry_3d.pdf`. On the exterior of all simulations is a perfect electric conductor (PEC) bounding box. It is assumed that outside the simulation space the PEC region extends toward infinity in all directions. Within the PEC box there exists a small region of convolution perfectly matched layer (CPML). The remainder of the simulation space can be divided into core region, cladding region, and test region. The core region is bound by the core/cladding permittivity interface, and it extends into the CPML region fully, making contact with the PEC bounding box. This effectively simulates infinite extent of the general shape of the core region in the outward traveling directions. The cladding region exists everytwhere not included in the core. The test rgion refers to a portion of waveguide length that is dedicated to nonideal properties, including surface roughness. The effective length of the test region is used to find alpha as a per-unit-length loss characteristic. Field values are recorded along the full line (in 2D, and full plane in 3D) at port 1 and port 2 during S-parameter simulations.
-
-## Included Files
-The code body is separated into 2D TE mode, 2D TM mode, and 3D FDTD. A separate readme is included for each with details on intended use, expected results, operation instructions, and additional details specific to those sets of code.
-
-S-parameter simulations also include a Keysight ADS demo file showing the correlation between SPICE netlist and touchstone format S-Parameters. This correlation is currently performed only in the frequency domain. The current implementation requires that frequency domain simulation in ADS be done at the same frequency samples used to generate the SPICE netlist. These are stored as `*.7zads` archives in the corresponding folders. ADS simulation has been completed and results are shown in `fdtd_circuit.dds`.
-
-## General Program Functionality
-Simulation parameters are adjusted in the file `user_config.py` for S-parameter extraction and `fdtd_config.py` for all other applications. Some notes on these parameters are listed below. It is not advised to alter any of the other parameters. In the example files included, some of the features have been removed to improve the simulation flow.
-- `eps_rel_bg`: The background relative permittivity. This is a unitless quantity with a default of 2.25 (corresponding to silicon dioxide). This is also referred to as the _cladding permittivity_. Several simulation parameters are normalized using this quantity.
-- `eps_rel_fg`: The foreground relative permittivity. This is a unitless quantity with a default value of 12.25 (corresponding to undoped silicon). This is also referred to as the _core permittivity_.
-- `sgl_wg_length`: Total desired physical length of the waveguide. This value is along the x-direction in 2D simulations, and along the z-direction in 3D simulations.
-- `sgl_wg_height`: Total desired waveguide height. This value is typically smaller than `sgl_wg_width`.
-- `sgl_wg_width`: Total desired waveguide width.
-- `pitch`: Pitch between multiple coupled waveguides. This value is uniform between all simulated waveguides.
-- `num_lines`: Number of parallel coupled waveguides. In roughness simulations: 2 rough profiles are generated with `rough_std` and `rough_acl` within the prescribed tolerance. One profile is applied to the top side of _each_ parallel waveguide and the other is applied to the bottom of _each_ parallel waveguide.
-- `port1_length`: Field excitation mode settling range for forward propagation. This parameter is the setup length needed for the field excitation to settle into a guided mode after excitation at the source point. It is _subtractive_ from `sgl_wg_length`, i.e. `sgl_wg_length` should be larger than the sum of `port1_length` and `port2_length` for proper simulation.
-- `port2_length`: Field excitation mode settling range for backward propagation.
-- `rough_std`: Expected standard deviation of a desired surface roughness profile.
-- `rough_acl`: Expected autocorrelation length of a desired surface roughness profile.
-- `tol_std`: Tolerance for roughness standard deviation.
-- `tol_acl`: Tolerance for roughness autocorrelation length.
-- `rough_toggle`: Switch for simulations involving surface roughness. When `rough_toggle` is **True** `rough_std` and `rough_acl` should be non-zero to ensure convergence of the profile generation process. When `rough_toggle` is **False** the simulation will be completed with _smooth_ sidewalls, and there will be no recorded value for alpha.
-- `ctype`: Type of cross-correlation between top and bottom roughness profiles.
-- `precision`: Floating point arithmetic precision for GPU parallelized code.
-- `feedback_at_n_percent`: Diagnostic information (memory usage, time remaining, etc.) readout interval.
-- `output_dir`: Output directory name for primary results. All GPU parallelized code will automatically create this directory if it does not exist. See the configuration files for further details.
-- `prof_dir`: Output directory name for rough profile storage. Note: this is available in GPU parallelized S-Parameter simulations only.
-- `roughness_profile`: This is the name attached to the generated rough profile as well as the end of output files from the corresponding simulation. The naming convention used by default is `_sXX_lcYY_rZZ`, where XX is the value for rough_std in nanometers, YY is the value for rough_acl in nanometers, and ZZ is the profile number (this can be any value).
-- `source_type`: Shape of the field excitation. Options include Gaussian pulse, frequency modulated Gaussian pulse, and time-harmonic signal. Both pulse excitations have a build and decay, but the time-harmonic excitation only has a build and then remains with a constant sinusoidal signal with the specified amplitude for the remainder of the simulation.
-- `wave_packet_bw`: Frequency modulated Gaussian pulse bandwidth. This defines the frequency domain percentage bandwidth. The default value is 80%.
-- `gauss_pulse_deg`: Gaussian pulse decay at f0. This defines the frequency domain amplitude in dB. The default value is -1 dB, e.g. if the source amplitude is 1, then the decay of -1 dB at f0 is approximately 0.9.
-- `f0`: Fundamental frequency. This value is used to modulate the field excitation shape. It is also used to determine the maximum time-step.
-- `harmonics`: Maximum harmonics. This value defines the number of harmonics above the fundamental frequency will be simulated. The maximum frequency corresponds to the minimum wavelength, which will in turn determine the spatial and temporal discretization.
-- `num_flights`: Number of flights along the length. This determines how many time steps are simulated. 1 flight time corresponds to the peak value of the field excitation traveling 1 sgl_wg_length distance. This should typically be slightly larger than 1.0. The default value is 1.2.
-- `points_per_wl`: Points per minimum wavelength. This additionally sets the spatial and temporal resolution by setting how many time samples are included in each minimum wavelength.
-
-Functions used directly in the FDTD update scheme are defined in **fdtd_funcs.py**. These functions are not needed outside of this context. Auxiliary functions are defined in **aux_funcs.py**.
-
-## S-Parameter Extraction Functionality
-- `auto_condition`: Automatically set `f0`, `harmonics`, `points_per_wl`, and `num_flights` based on the below S-parameter settings.
-- `sparam_file`: Output file name for the resulting touchstone file.
-- `sparam_fmin`: Minimum frequency for S-parameter simulation.
-- `sparam_fmax`: Maximum frequency for S-parameter simulation.
-- `sparam_num_freqs`: Number of frequency samples between `sparam_fmin` and `sparam_fmax`, inclusive.
-
-## Python build
-This project was created with the Anaconda Python distribution, and the following packages:
-- Python 3.7.11
-- IPython 7.26.0
-- Numpy 1.20.3
-- Matplotlib 3.4.2
-- Numba 0.53.1
-- Pyspeckle 0.3.1
-- Psutil 5.8.0
+The OIDT is a computational electromagnetic program. It is split into two portions (1) the Finite-Difference Time-Domain (FDTD) and scattering parameter extraction portion, both of which are located in the `.\FDTD` folder and (2) the equivalent circuit synthesis and passivity enforcement portion located in the `.\SROPEE` folder. A more detailed description is contained within the corresponding folders for each portion. Instructions for running the program from start to finish are in the `.\Integration_FDTD+SROPEE`.
 
 ## Licensing
 This project is licensed under GNU GPL v.3.0. See the license file for details.
@@ -143,7 +80,7 @@ This project is licensed under GNU GPL v.3.0. See the license file for details.
 	Effective Using a Graphics Accelerator," IEEE Transactions on Magnetics, 
 	Vol. 45, No. 3, Mar. 2009, pp. 1324--1327, DOI: 10.1109/TMAG.2009.2012614
 
-[16] Rasul Choupanzadeh "SROPEE," GitHub, 28 June 2022, Accessed: 1 July 2022,
+[16] Rasul Choupanzadeh "SROPEE," GitHub, 28 June 2022, Accessed: 25 August 2022,
 	Online, Available: https://github.com/RasulChoupanzadeh/SROPEE
 ```
 
